@@ -37,7 +37,7 @@ for (const width of [320, 390, 1440]) {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'A little closer.' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Capture screen' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Share screenshot' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Share to ChatGPT', exact: true })).toBeDisabled();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
     await page.getByRole('button', { name: 'Account', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -52,7 +52,7 @@ test('capture, preview, download, discard and sign out', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Capture screen' })).toBeEnabled();
   await page.getByRole('button', { name: 'Capture screen' }).click();
-  await expect(page.getByRole('button', { name: 'Share screenshot' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Share to ChatGPT', exact: true })).toBeEnabled();
   await expect(page.locator('#screenshot')).toBeVisible();
   expect(await page.locator('#screenshot').evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
   await page.screenshot({ path: 'artifacts/sidecar-captured.png', fullPage: true });
@@ -102,9 +102,42 @@ test('phone screenshot expires after two minutes', async ({ page }) => {
   await signedIn(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Capture screen' }).click();
-  await expect(page.getByRole('button', { name: 'Share screenshot' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Share to ChatGPT', exact: true })).toBeEnabled();
   await page.clock.install();
   await page.clock.fastForward(121000);
-  await expect(page.getByRole('button', { name: 'Share screenshot' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Share to ChatGPT', exact: true })).toBeDisabled();
   await expect(page.locator('#screenshot')).not.toBeVisible();
 });
+
+for (const mode of ['supported', 'unsupported', 'cancelled']) {
+  test(`native sharing: ${mode}, without an automatic download`, async ({ page }) => {
+    await signedIn(page);
+    await page.addInitScript((mode) => {
+      window.sharedFiles = [];
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => mode !== 'unsupported' });
+      Object.defineProperty(navigator, 'share', { configurable: true, value: async ({ files }) => {
+        if (mode === 'cancelled') throw new DOMException('Cancelled', 'AbortError');
+        window.sharedFiles.push(...files.map(file => ({ name: file.name, type: file.type, size: file.size })));
+      } });
+    }, mode);
+    const downloads = [];
+    page.on('download', download => downloads.push(download));
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Capture screen' }).click();
+    const share = page.getByRole('button', { name: 'Share screenshot to ChatGPT', exact: true });
+    await expect(share).toBeEnabled();
+    await share.click();
+    await expect(share).toBeEnabled();
+    if (mode === 'supported') {
+      const files = await page.evaluate(() => window.sharedFiles);
+      expect(files).toHaveLength(1);
+      expect(files[0].type).toBe('image/jpeg');
+      expect(files[0].size).toBeGreaterThan(0);
+      await page.getByRole('button', { name: 'Share to ChatGPT', exact: true }).click();
+      expect(await page.evaluate(() => window.sharedFiles.length)).toBe(2);
+    } else if (mode === 'unsupported') {
+      await expect(page.getByRole('status')).toContainText('Image sharing is unavailable');
+    } else await expect(page.locator('#notice')).toBeEmpty();
+    expect(downloads).toHaveLength(0);
+  });
+}

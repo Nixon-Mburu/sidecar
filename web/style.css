@@ -9,3 +9,4 @@
 @media(max-width:480px){.app-shell{padding:0 24px}.topbar{height:78px}.page-title{padding:27px 0 24px}h1{font-size:31px}.preview{height:236px}.capture-section{padding-top:24px}.signin-section{margin-top:24px}footer{font-size:7px}.brand{font-size:27px}.preview-toolbar{margin-top:24px}}
 @media(max-width:350px){.app-shell{padding:0 16px}h1{font-size:28px}.status-badge{font-size:10px}.device-row{gap:10px}.preview{height:220px}footer>span:last-child{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}.spinner{animation-duration:2s}}
+.preview-toolbar #capture-time{margin-left:auto}.preview-toolbar .icon-button{width:32px;height:32px;color:var(--blue)}.preview-toolbar .icon-button .lucide{width:18px;height:18px}

@@ -6,14 +6,15 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 createIcons({ icons: { UserRound, ShieldCheck, Laptop, ScanLine, ArrowUpRight, Monitor, Plus, Clock3, Trash2, Share2, Download, LogIn, X } });
 const $ = (id) => document.getElementById(id);
 let auth, user, config, connected = false, busy = false, imageUrl, imageFile, expiresAt = 0, generation = 0;
-let jobId;
+let jobId, sharing = false;
 const notice = (message = '') => { $('notice').textContent = message; };
 
 function controls() {
   $('capture-button').disabled = !user || !connected || busy;
   $('capture-button').querySelector('span').textContent = busy ? 'Capturing...' : 'Capture screen';
   $('capture-progress').hidden = !busy;
-  for (const id of ['share-button', 'download-button', 'discard-button']) $(id).disabled = !imageFile || busy;
+  for (const id of ['share-button', 'preview-share-button']) $(id).disabled = !imageFile || busy || sharing;
+  for (const id of ['download-button', 'discard-button']) $(id).disabled = !imageFile || busy;
 }
 
 function connection(value, text) {
@@ -109,16 +110,20 @@ function download() {
   const link = document.createElement('a'); link.href = imageUrl; link.download = imageFile.name; link.click();
 }
 $('download-button').addEventListener('click', download);
-$('share-button').addEventListener('click', async () => {
-  if (!imageFile) return;
+async function shareScreenshot() {
+  if (!imageFile || sharing) return;
+  notice();
+  sharing = true; controls();
   try {
-    if (navigator.canShare?.({ files: [imageFile] })) {
-      await navigator.share({ files: [imageFile], title: 'Sidecar screenshot' });
-    } else { download(); notice('Screenshot downloaded. It is ready to attach in ChatGPT.'); }
+    if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [imageFile] })) {
+      await navigator.share({ files: [imageFile] });
+    } else notice('Image sharing is unavailable in this browser. Try Sidecar in your phone browser, or use Download.');
   } catch (error) {
     if (error.name !== 'AbortError') notice('Sharing failed. You can download the screenshot instead.');
-  }
-});
+  } finally { sharing = false; controls(); }
+}
+$('share-button').addEventListener('click', shareScreenshot);
+$('preview-share-button').addEventListener('click', shareScreenshot);
 $('discard-button').addEventListener('click', () => { clearImage(); notice(); });
 $('image-button').addEventListener('click', () => $('image-dialog').showModal());
 $('close-image').addEventListener('click', () => $('image-dialog').close());
