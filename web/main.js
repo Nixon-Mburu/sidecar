@@ -117,6 +117,9 @@ async function shareScreenshot() {
   try {
     if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [imageFile] })) {
       await navigator.share({ files: [imageFile] });
+    } else if (typeof ClipboardItem === 'function' && typeof navigator.clipboard?.write === 'function') {
+      await navigator.clipboard.write([new ClipboardItem({ [imageFile.type]: imageFile })]);
+      notice('Image copied to the clipboard. Paste it into ChatGPT.');
     } else notice('Image sharing is unavailable in this browser. Try Sidecar in your phone browser, or use Download.');
   } catch (error) {
     if (error.name !== 'AbortError') notice('Sharing failed. You can download the screenshot instead.');

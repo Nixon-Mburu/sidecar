@@ -119,6 +119,7 @@ for (const mode of ['supported', 'unsupported', 'cancelled']) {
         if (mode === 'cancelled') throw new DOMException('Cancelled', 'AbortError');
         window.sharedFiles.push(...files.map(file => ({ name: file.name, type: file.type, size: file.size })));
       } });
+      if (mode === 'unsupported') Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
     }, mode);
     const downloads = [];
     page.on('download', download => downloads.push(download));
@@ -141,3 +142,19 @@ for (const mode of ['supported', 'unsupported', 'cancelled']) {
     expect(downloads).toHaveLength(0);
   });
 }
+
+test('desktop share copies the image when native sharing is unavailable', async ({ page }) => {
+  await signedIn(page);
+  await page.addInitScript(() => {
+    window.copiedItems = [];
+    Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => false });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {
+      write: async (items) => window.copiedItems.push(...items),
+    } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Capture screen' }).click();
+  await page.getByRole('button', { name: 'Share screenshot to ChatGPT', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Image copied to the clipboard');
+  expect(await page.evaluate(() => window.copiedItems)).toHaveLength(1);
+});
