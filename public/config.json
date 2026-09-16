@@ -1,5 +1,5 @@
 {
-  "relayUrl": "",
+  "relayUrl": "https://sidecar-5lpf.onrender.com",
   "firebase": {
     "apiKey": "AIzaSyAXdVlbLP-VVUWNMN-vOlh4opMzC71jog0",
     "authDomain": "sidecarpic.firebaseapp.com",
