@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+node_modules/
+dist/
+.env
+.env.local
+.firebase/
+*-debug.log
+artifacts/
+test-results/
+playwright-report/
+agent/config.json

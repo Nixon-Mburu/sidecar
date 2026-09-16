@@ -1,0 +1,9 @@
+{
+  "relayUrl": "",
+  "firebase": {
+    "apiKey": "AIzaSyAXdVlbLP-VVUWNMN-vOlh4opMzC71jog0",
+    "authDomain": "sidecarpic.firebaseapp.com",
+    "projectId": "sidecarpic",
+    "appId": "1:259787553678:web:a5f3b33fff6ec6db7b02df"
+  }
+}

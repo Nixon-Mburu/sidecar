@@ -1,0 +1,9 @@
+{
+  "name": "Sidecar",
+  "short_name": "Sidecar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2455e8",
+  "icons": [{ "src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }]
+}

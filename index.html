@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#2455e8" />
+    <meta name="description" content="Your laptop, a little closer. Sidecar screen capture." />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Sidecar</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Sidecar home"><img src="/icon.png" alt="" width="36" height="36" />sidecar<span class="brand-dot">.</span></a>
+        <button id="account-button" class="icon-button" title="Account" aria-label="Account"><i data-lucide="user-round"></i></button>
+      </header>
+      <main>
+        <div class="page-title"><div><p class="eyebrow">YOUR WORKSPACE</p><h1>A little closer.</h1></div><span class="secure-mark" title="Authenticated connection"><i data-lucide="shield-check"></i></span></div>
+        <section class="device-row" aria-label="Laptop connection">
+          <span class="device-icon"><i data-lucide="laptop"></i></span>
+          <div class="device-details"><h2>Ubuntu laptop</h2><p id="connection-text">Not connected</p></div>
+          <span id="connection-badge" class="status-badge"><span></span><b>Offline</b></span>
+        </section>
+        <section class="capture-section" aria-label="Screen capture">
+          <div class="section-heading"><h2>Screen capture</h2><span id="capture-count">01 / LIVE</span></div>
+          <button id="capture-button" class="capture-button" disabled><i data-lucide="scan-line"></i><span>Capture screen</span><i data-lucide="arrow-up-right" class="capture-arrow"></i></button>
+          <div class="preview-toolbar"><span id="preview-label">LATEST CAPTURE</span><span id="capture-time">No captures yet</span></div>
+          <div id="preview" class="preview">
+            <div id="empty-state" class="empty-state"><div class="empty-symbol"><i data-lucide="monitor"></i><span><i data-lucide="plus"></i></span></div><h3>Your screen belongs here.</h3><p id="empty-text">Ready when your laptop is.</p></div>
+            <button id="image-button" class="image-button" hidden aria-label="Open screenshot"><img id="screenshot" alt="Latest screenshot from your Ubuntu laptop" /></button>
+            <div id="capture-progress" class="capture-progress" hidden><span class="spinner"></span><p>Capturing your screen...</p></div>
+          </div>
+          <div class="image-meta"><span><i data-lucide="clock-3"></i><span id="expiry-text">Nothing stored. Just the moment.</span></span><button id="discard-button" class="icon-button" title="Discard screenshot" aria-label="Discard screenshot" disabled><i data-lucide="trash-2"></i></button></div>
+          <div class="share-row"><button id="share-button" class="share-button" disabled><i data-lucide="share-2"></i><span>Share screenshot</span></button><button id="download-button" class="download-button" title="Download screenshot" aria-label="Download screenshot" disabled><i data-lucide="download"></i></button></div>
+        </section>
+        <p id="notice" class="notice" role="status" aria-live="polite"></p>
+        <section id="signin-section" class="signin-section"><div><h2>Your laptop. Your eyes only.</h2><p id="signin-description">Sign in to your Sidecar account.</p></div><button id="signin-button" class="signin-button"><i data-lucide="log-in"></i>Sign in with Google</button></section>
+      </main>
+      <footer><span><span class="footer-dot"></span> A SMALL WINDOW INTO YOUR WORKSPACE</span><span>SIDECAR</span></footer>
+    </div>
+    <dialog id="account-dialog"><div class="dialog-heading"><h2>Your account</h2><button class="icon-button" id="close-account" aria-label="Close account" title="Close"><i data-lucide="x"></i></button></div><p id="account-email">Not signed in</p><p id="account-uid" class="account-uid"></p><button id="signout-button" class="signin-button">Sign out</button></dialog>
+    <dialog id="image-dialog" class="image-dialog"><button id="close-image" class="icon-button" aria-label="Close screenshot" title="Close"><i data-lucide="x"></i></button><img id="full-image" alt="Full-size screenshot" /></dialog>
+    <script type="module" src="/web/main.js"></script>
+  </body>
+</html>
