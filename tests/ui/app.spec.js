@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-async function signedIn(page, failure = false) {
+async function signedIn(page, failure = false, seed = true) {
   const token = ['eyJhbGciOiJSUzI1NiJ9', Buffer.from(JSON.stringify({ sub: 'owner', exp: 4102444800, iat: 1700000000 })).toString('base64url'), 'signature'].join('.');
-  await page.addInitScript(({ token }) => {
+  if (seed) await page.addInitScript(({ token }) => {
+    if (localStorage.getItem('sidecar-test-seeded')) return;
+    localStorage.setItem('sidecar-test-seeded', 'true');
     localStorage.setItem('firebase:authUser:sidecar-test:[DEFAULT]', JSON.stringify({
       uid: 'owner', email: 'owner@example.com', emailVerified: true, isAnonymous: false,
       providerData: [], apiKey: 'sidecar-test', appName: '[DEFAULT]',
@@ -65,6 +67,27 @@ test('capture, preview, download, discard and sign out', async ({ page }) => {
   await page.getByRole('button', { name: 'Account', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Capture screen' })).toBeDisabled();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Capture screen' })).toBeDisabled();
+});
+
+test('saved sign-in survives reload and a new browser context', async ({ page, browser }) => {
+  await signedIn(page);
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Capture screen' })).toBeEnabled();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Capture screen' })).toBeEnabled();
+  await expect(page.locator('#signin-section')).toBeHidden();
+  const saved = await page.context().storageState();
+  const context = await browser.newContext({ storageState: saved });
+  try {
+    const reopened = await context.newPage();
+    await signedIn(reopened, false, false);
+    await reopened.goto('/');
+    await expect(reopened.getByRole('button', { name: 'Capture screen' })).toBeEnabled();
+    await expect(reopened.locator('#signin-section')).toBeHidden();
+  } finally { await context.close(); }
 });
 
 test('permission failure restores capture control', async ({ page }) => {

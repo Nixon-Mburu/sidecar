@@ -1,7 +1,7 @@
 import './style.css';
 import { createIcons, UserRound, ShieldCheck, Laptop, ScanLine, ArrowUpRight, Monitor, Plus, Clock3, Trash2, Share2, Download, LogIn, X } from 'lucide';
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 createIcons({ icons: { UserRound, ShieldCheck, Laptop, ScanLine, ArrowUpRight, Monitor, Plus, Clock3, Trash2, Share2, Download, LogIn, X } });
 const $ = (id) => document.getElementById(id);
@@ -158,9 +158,11 @@ async function init() {
     const relayReady = /^https:\/\//.test(config.relayUrl || '');
     config.relayUrl = (config.relayUrl || '').replace(/\/$/, '');
     auth = getAuth(initializeApp(config.firebase));
+    await setPersistence(auth, browserLocalPersistence);
     onAuthStateChanged(auth, (nextUser) => {
       generation++; user = nextUser; busy = false; jobId = undefined; clearImage(); notice();
       $('signin-section').hidden = !!user;
+      $('signin-button').disabled = false;
       $('account-email').textContent = user?.email || 'Not signed in';
       $('account-uid').textContent = user ? `Account ID: ${user.uid}` : '';
       $('signout-button').hidden = !user;
@@ -170,9 +172,13 @@ async function init() {
     });
     if (!relayReady) checkStatus = async () => {};
   } catch (error) {
+    $('signin-section').hidden = false;
     $('signin-button').disabled = true;
     $('signin-description').textContent = 'Your workspace is being connected.';
-    notice(error.message === 'Sign-in is being connected.' ? error.message : 'Sidecar could not load its connection settings.');
+    connection(false, 'Connection unavailable');
+    notice(error.code === 'auth/web-storage-unsupported'
+      ? 'Allow site storage for Sidecar to remember your sign-in.'
+      : error.message === 'Sign-in is being connected.' ? error.message : 'Sidecar could not restore your session. Please reload.');
   }
 }
 init();
