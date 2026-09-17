@@ -49,7 +49,8 @@ Wayland uses `org.freedesktop.portal.Screenshot` over the session bus. Ubuntu ma
 - Pending requests expire after 90 seconds. Relay images expire after 120 seconds, with a five-second cleanup interval, or are removed immediately after retrieval. The phone clears its image after two minutes, including when resuming from the background.
 - Image responses use `Cache-Control: no-store`; images are never put into localStorage, IndexedDB, Firebase Storage, or a service-worker cache.
 - The relay can read image bytes while forwarding them; this is HTTPS transport encryption, not end-to-end encryption. Memory release is not a promise of cryptographic RAM erasure.
-- Downloading or sharing creates copies outside Sidecar's expiry policy. The OS decides which apps appear in the share sheet; ChatGPT cannot be selected automatically.
+- Downloading, copying, or sharing creates copies outside Sidecar's expiry policy. The clipboard is controlled by your OS and is not cleared by Sidecar's image timer.
+- The main **Copy & open ChatGPT** action converts the image to PNG in memory, writes it to the clipboard, and opens ChatGPT in the same tab. Paste into the composer to attach it; no download or gallery step is required. The preview share icon still opens the native app chooser. The OS decides which apps appear there; a webpage cannot force ChatGPT into the list or automatically attach a clipboard image in another app.
 - This release uses a web app manifest but deliberately has no offline screenshot cache or service worker.
 
 ## Verification

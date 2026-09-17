@@ -1,20 +1,21 @@
 import './style.css';
-import { createIcons, UserRound, ShieldCheck, Laptop, ScanLine, ArrowUpRight, Monitor, Plus, Clock3, Trash2, Share2, Download, LogIn, X } from 'lucide';
+import { createIcons, UserRound, ShieldCheck, Laptop, ScanLine, ArrowUpRight, Monitor, Plus, Clock3, Trash2, Share2, ClipboardCopy, Download, LogIn, X } from 'lucide';
+import { copyImage } from './clipboard.js';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
-createIcons({ icons: { UserRound, ShieldCheck, Laptop, ScanLine, ArrowUpRight, Monitor, Plus, Clock3, Trash2, Share2, Download, LogIn, X } });
+createIcons({ icons: { UserRound, ShieldCheck, Laptop, ScanLine, ArrowUpRight, Monitor, Plus, Clock3, Trash2, Share2, ClipboardCopy, Download, LogIn, X } });
 const $ = (id) => document.getElementById(id);
 let auth, user, config, connected = false, busy = false, imageUrl, imageFile, expiresAt = 0, generation = 0;
 let jobId, sharing = false;
 const notice = (message = '') => { $('notice').textContent = message; };
 
 function controls() {
-  $('capture-button').disabled = !user || !connected || busy;
+  $('capture-button').disabled = !user || !connected || busy || sharing;
   $('capture-button').querySelector('span').textContent = busy ? 'Capturing...' : 'Capture screen';
   $('capture-progress').hidden = !busy;
   for (const id of ['share-button', 'preview-share-button']) $(id).disabled = !imageFile || busy || sharing;
-  for (const id of ['download-button', 'discard-button']) $(id).disabled = !imageFile || busy;
+  for (const id of ['download-button', 'discard-button']) $(id).disabled = !imageFile || busy || sharing;
 }
 
 function connection(value, text) {
@@ -118,14 +119,29 @@ async function shareScreenshot() {
     if (typeof navigator.share === 'function' && navigator.canShare?.({ files: [imageFile] })) {
       await navigator.share({ files: [imageFile] });
     } else if (typeof ClipboardItem === 'function' && typeof navigator.clipboard?.write === 'function') {
-      await navigator.clipboard.write([new ClipboardItem({ [imageFile.type]: imageFile })]);
+      await copyImage(imageFile);
       notice('Image copied to the clipboard. Paste it into ChatGPT.');
     } else notice('Image sharing is unavailable in this browser. Try Sidecar in your phone browser, or use Download.');
   } catch (error) {
     if (error.name !== 'AbortError') notice('Sharing failed. You can download the screenshot instead.');
   } finally { sharing = false; controls(); }
 }
-$('share-button').addEventListener('click', shareScreenshot);
+$('share-button').addEventListener('click', async () => {
+  if (!imageFile || sharing) return;
+  notice();
+  sharing = true; controls();
+  const version = generation;
+  try {
+    await copyImage(imageFile);
+    if (version !== generation) return;
+    // Same-tab navigation avoids popup blockers and never sends image data in a URL.
+    window.location.assign('https://chatgpt.com/');
+  } catch (error) {
+    if (version === generation) notice(error.name === 'NotAllowedError'
+      ? 'Clipboard access was blocked. Allow clipboard access for Sidecar and try again.'
+      : error.message || 'Could not copy the image. Try the share icon.');
+  } finally { sharing = false; controls(); }
+});
 $('preview-share-button').addEventListener('click', shareScreenshot);
 $('discard-button').addEventListener('click', () => { clearImage(); notice(); });
 $('image-button').addEventListener('click', () => $('image-dialog').showModal());
