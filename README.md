@@ -1,6 +1,6 @@
 # Sidecar
 
-Phone-triggered Ubuntu screen capture. Flask runs on Render, the phone app lives on Firebase Hosting, and an outbound-only agent runs in your Ubuntu desktop session. No LLM API, browser extension, or continuous capture.
+Phone-triggered Ubuntu screen capture. Flask runs on Render, the phone app lives on Firebase Hosting, and an outbound-only agent runs in your Ubuntu desktop session. No LLM API or browser extension; only requested frames leave the laptop.
 
 ## Local development
 
@@ -40,7 +40,11 @@ Environment variables are listed in `.env.example`; Render supplies them directl
 
 The installer prompts for your relay URL and secret, writes a mode-600 config to `~/.config/sidecar/agent.json`, and adds a desktop autostart entry. It starts automatically at future desktop logins, with no terminal window. Keep this checkout and its virtual environment in place. Run only one agent per laptop. To uninstall startup, remove `~/.config/autostart/sidecar.desktop` and `~/.config/sidecar`.
 
-Wayland uses `org.freedesktop.portal.Screenshot` over the session bus. Ubuntu may require a permission dialog or show an OS capture indicator; Sidecar cannot promise invisible capture. The portal can create a temporary image file, which the agent deletes after encoding. On X11, MSS captures into memory. Capture never injects anything into websites or interacts with the laptop browser. The agent needs an unlocked, active graphical session and a working desktop portal.
+Wayland uses a permission-approved `org.freedesktop.portal.ScreenCast` session with PipeWire. On the first capture after starting the agent, select your monitor in Ubuntu's screen-sharing prompt. Later captures reuse that session and do not call the screenshot API, avoiding its per-screenshot flash and shutter sound. Manual screenshots are unaffected. Ubuntu's sharing indicator remains visible; this is not undetectable capture.
+
+The local stream stays active while the agent runs, with a bounded frame queue in RAM. Only a requested frame is encoded and uploaded; no video is recorded or streamed to Render. Stopping sharing revokes access; the next attempt fails instead of returning cached pixels. A subsequent request can ask for permission again. The agent never falls back to the flashing screenshot portal. On X11, MSS still captures into memory.
+
+The Wayland helper uses Ubuntu's `/usr/bin/python3` with `python3-gi`, `gir1.2-gstreamer-1.0`, `gir1.2-gst-plugins-base-1.0`, `gstreamer1.0-pipewire`, and `gstreamer1.0-plugins-base`. These are available on the development laptop. The agent needs an active, unlocked graphical session. No browser extension or page interaction is involved.
 
 ## Privacy and boundaries
 
@@ -56,7 +60,7 @@ Wayland uses `org.freedesktop.portal.Screenshot` over the session bus. Ubuntu ma
 ## Verification
 
 ```sh
-.venv/bin/python -m pytest tests/test_relay.py
+.venv/bin/python -m pytest tests/test_relay.py tests/test_capture.py
 npm run build
 npm run test:ui
 ```
